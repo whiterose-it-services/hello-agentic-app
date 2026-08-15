@@ -92,5 +92,25 @@ public class MessageEndpointTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Equal(allowedOrigin, Assert.Single(values!));
     }
 
+    // CORS / message-api spec: a request with an Origin header that does NOT
+    // match the configured allowed origin must not receive an
+    // Access-Control-Allow-Origin header for that disallowed origin.
+    [Fact]
+    public async Task GetMessage_WithDisallowedOrigin_DoesNotReturnAccessControlAllowOriginHeader()
+    {
+        const string disallowedOrigin = "https://evil.example.com";
+        var client = _factory.CreateClient();
+
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/message");
+        request.Headers.Add("Origin", disallowedOrigin);
+
+        var response = await client.SendAsync(request);
+
+        if (response.Headers.TryGetValues("Access-Control-Allow-Origin", out var values))
+        {
+            Assert.NotEqual(disallowedOrigin, Assert.Single(values));
+        }
+    }
+
     private sealed record MessageResponseDto(string Message);
 }
