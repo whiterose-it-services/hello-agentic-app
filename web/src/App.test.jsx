@@ -5,6 +5,20 @@ import { fetchMessage } from './api'
 
 vi.mock('./api')
 
+// Mirrors the formatting logic in App.jsx's formatTimestampUtc so the test
+// doesn't hardcode a locale-formatted time string that could be fragile
+// across environments/ICU versions.
+const timeFormatter = new Intl.DateTimeFormat('en-US', {
+  hour: 'numeric',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: true,
+  timeZone: 'UTC',
+})
+function formatTimestampUtc(timestampUtc) {
+  return `${timeFormatter.format(new Date(timestampUtc))} UTC`
+}
+
 afterEach(() => {
   cleanup()
   vi.resetAllMocks()
@@ -12,12 +26,22 @@ afterEach(() => {
 
 describe('App', () => {
   // AC-3 / FR-4, FR-5: fetches on mount and renders the fetched message.
-  it('renders the fetched message on success', async () => {
-    fetchMessage.mockResolvedValueOnce({ message: 'Hello World' })
+  // Spec: web-message-display "Successful fetch renders message and timestamp together"
+  it('renders the fetched message and a UTC-labeled timestamp on success', async () => {
+    const timestampUtc = '2026-08-15T16:37:58Z'
+    fetchMessage.mockResolvedValueOnce({ message: 'Hello World', timestampUtc })
 
     render(<App />)
 
-    expect(await screen.findByText('Hello World')).toBeInTheDocument()
+    const expectedTime = formatTimestampUtc(timestampUtc)
+    const message = await screen.findByText(
+      (_, element) =>
+        element?.tagName.toLowerCase() === 'p' &&
+        element.textContent === `Hello World, it is currently ${expectedTime}`,
+    )
+    expect(message).toBeInTheDocument()
+    expect(message.textContent).toContain('Hello World')
+    expect(message.textContent).toMatch(/\d{1,2}:\d{2}:\d{2}\s?(AM|PM)\s?UTC/)
   })
 
   // AC-4 / FR-6: network error is handled without an unhandled rejection,
@@ -56,7 +80,13 @@ describe('App', () => {
 
     expect(screen.getByText(/loading message/i)).toBeInTheDocument()
 
-    resolvePromise({ message: 'Hello World' })
-    await waitFor(() => expect(screen.getByText('Hello World')).toBeInTheDocument())
+    resolvePromise({ message: 'Hello World', timestampUtc: '2026-08-15T16:41:54.639Z' })
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          (_, element) => element?.tagName.toLowerCase() === 'p' && Boolean(element.textContent?.includes('Hello World')),
+        ),
+      ).toBeInTheDocument(),
+    )
   })
 })
