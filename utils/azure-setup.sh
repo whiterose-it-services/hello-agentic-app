@@ -46,7 +46,7 @@ echo "== Checking prerequisites =="
 command -v az >/dev/null || { echo "az CLI not found. Install: https://aka.ms/installazurecliwindows" >&2; exit 1; }
 command -v gh >/dev/null || { echo "gh CLI not found. Install: https://cli.github.com" >&2; exit 1; }
 az account show >/dev/null 2>&1 || { echo "Not logged into az. Run: az login" >&2; exit 1; }
-gh auth status >/dev/null 2>&1 || { echo "Not logged into gh. Run: gh auth login" >&2; exit 1; }
+gh auth token >/dev/null 2>&1 || { echo "Not logged into gh. Run: gh auth login" >&2; exit 1; }
 
 echo "== Creating resource group '$RESOURCE_GROUP' in $LOCATION =="
 az group create --name "$RESOURCE_GROUP" --location "$LOCATION" -o none
