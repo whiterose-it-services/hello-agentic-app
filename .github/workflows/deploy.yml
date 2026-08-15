@@ -2,6 +2,10 @@ name: Deploy to Azure
 on:
   push:
     branches: [master]
+    paths:
+      - 'api/**'
+      - 'web/**'
+      - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
 jobs:
