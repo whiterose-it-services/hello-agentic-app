@@ -1,0 +1,15 @@
+.app {
+  padding: 24px;
+  text-align: center;
+}
+
+.message {
+  font-size: 32px;
+  font-weight: 600;
+  color: #111111;
+}
+
+.error {
+  font-size: 20px;
+  color: #b00020;
+}
