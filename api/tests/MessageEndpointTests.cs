@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Api.Tests;
@@ -48,6 +49,32 @@ public class MessageEndpointTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Equal("application/json", response.Content.Headers.ContentType!.MediaType);
     }
 
+    // Response includes a UTC-formatted timestamp: the timestampUtc field is
+    // present, parses as an ISO 8601 UTC value ending in "Z", and is within a
+    // few seconds of when the request was made.
+    [Fact]
+    public async Task GetMessage_IncludesUtcTimestampCloseToNow()
+    {
+        var client = _factory.CreateClient();
+        var beforeRequest = DateTime.UtcNow;
+
+        var rawJson = await client.GetStringAsync("/api/message");
+
+        var afterRequest = DateTime.UtcNow;
+
+        using var document = JsonDocument.Parse(rawJson);
+        Assert.True(document.RootElement.TryGetProperty("timestampUtc", out var timestampElement));
+
+        var rawValue = timestampElement.GetString();
+        Assert.NotNull(rawValue);
+        Assert.EndsWith("Z", rawValue);
+
+        var timestamp = timestampElement.GetDateTime();
+        Assert.Equal(DateTimeKind.Utc, timestamp.Kind);
+
+        Assert.InRange(timestamp, beforeRequest.AddSeconds(-10), afterRequest.AddSeconds(10));
+    }
+
     // AC-2 / FR-3: a request with an Origin header matching the configured
     // allowed origin receives a matching Access-Control-Allow-Origin header.
     [Fact]
@@ -63,6 +90,26 @@ public class MessageEndpointTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.True(response.Headers.TryGetValues("Access-Control-Allow-Origin", out var values));
         Assert.Equal(allowedOrigin, Assert.Single(values!));
+    }
+
+    // CORS / message-api spec: a request with an Origin header that does NOT
+    // match the configured allowed origin must not receive an
+    // Access-Control-Allow-Origin header for that disallowed origin.
+    [Fact]
+    public async Task GetMessage_WithDisallowedOrigin_DoesNotReturnAccessControlAllowOriginHeader()
+    {
+        const string disallowedOrigin = "https://evil.example.com";
+        var client = _factory.CreateClient();
+
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/message");
+        request.Headers.Add("Origin", disallowedOrigin);
+
+        var response = await client.SendAsync(request);
+
+        if (response.Headers.TryGetValues("Access-Control-Allow-Origin", out var values))
+        {
+            Assert.NotEqual(disallowedOrigin, Assert.Single(values));
+        }
     }
 
     private sealed record MessageResponseDto(string Message);
