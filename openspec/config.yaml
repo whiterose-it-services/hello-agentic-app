@@ -18,6 +18,9 @@ schema: spec-driven
 #       - Always include a "Non-goals" section
 #     tasks:
 #       - Break tasks into chunks of max 2 hours
+rules:
+  specs:
+    - When writing the first-ever spec for a capability (brownfield adoption, no existing openspec/specs/<capability>/spec.md), only document the requirements this proposal actually introduces or changes. Do not backfill pre-existing adjacent behavior (e.g. unrelated endpoints, auth, CORS) into the initial delta just because it happens to already exist in the capability's code - let it get specced when a future change actually touches it.
 
 # Per-operation guidance (optional)
 # Add advisory guidance for how apply and archive work should be conducted.
