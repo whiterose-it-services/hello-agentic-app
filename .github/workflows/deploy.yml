@@ -12,7 +12,7 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
-      - run: dotnet publish api -c Release -o publish
+      - run: dotnet publish api/api.csproj -c Release -o publish
       - uses: azure/webapps-deploy@v3
         with:
           app-name: hello-agentic-api-whiterose
