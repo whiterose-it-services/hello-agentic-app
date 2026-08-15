@@ -30,4 +30,4 @@ jobs:
           app_location: web
           output_location: dist
         env:
-          VITE_API_URL: https://hello-agentic-api-whiterose.azurewebsites.net
+          VITE_API_BASE_URL: https://hello-agentic-api-whiterose.azurewebsites.net
