@@ -5,7 +5,8 @@ A React front end that displays a message fetched from a .NET Web API.
 ## Structure
 - `api/` — .NET 10 minimal Web API. Endpoint: GET /api/message returns { "message": "Hello World" }.
 - `web/` — React app (Vite). Fetches /api/message on load and renders the message.
-- `docs/` — requirements.md and plan.md produced by the workflow.
+- `docs/` — requirements.md and plan.md from the initial feature (historical; superseded by OpenSpec going forward).
+- `openspec/` — spec-driven planning for new features. `specs/` holds the living spec of current behavior; `changes/` holds in-flight change proposals (proposal.md, spec deltas, design.md, tasks.md); `changes/archive/` holds completed ones. Workflow: `/opsx:propose`, `/opsx:apply`, `/opsx:archive`.
 
 ## Conventions
 - Branch naming: feature/<short-description>
