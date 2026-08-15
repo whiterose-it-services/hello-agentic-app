@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Api.Tests;
@@ -46,6 +47,32 @@ public class MessageEndpointTests : IClassFixture<WebApplicationFactory<Program>
 
         Assert.NotNull(response.Content.Headers.ContentType);
         Assert.Equal("application/json", response.Content.Headers.ContentType!.MediaType);
+    }
+
+    // Response includes a UTC-formatted timestamp: the timestampUtc field is
+    // present, parses as an ISO 8601 UTC value ending in "Z", and is within a
+    // few seconds of when the request was made.
+    [Fact]
+    public async Task GetMessage_IncludesUtcTimestampCloseToNow()
+    {
+        var client = _factory.CreateClient();
+        var beforeRequest = DateTime.UtcNow;
+
+        var rawJson = await client.GetStringAsync("/api/message");
+
+        var afterRequest = DateTime.UtcNow;
+
+        using var document = JsonDocument.Parse(rawJson);
+        Assert.True(document.RootElement.TryGetProperty("timestampUtc", out var timestampElement));
+
+        var rawValue = timestampElement.GetString();
+        Assert.NotNull(rawValue);
+        Assert.EndsWith("Z", rawValue);
+
+        var timestamp = timestampElement.GetDateTime();
+        Assert.Equal(DateTimeKind.Utc, timestamp.Kind);
+
+        Assert.InRange(timestamp, beforeRequest.AddSeconds(-10), afterRequest.AddSeconds(10));
     }
 
     // AC-2 / FR-3: a request with an Origin header matching the configured
