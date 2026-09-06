@@ -1,6 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchMessage } from './api'
 import './App.css'
+
+// Mirrors the API's MaxNameLength so the browser stops over-long input before
+// it becomes a rejected request. The API remains the authority.
+const MAX_NAME_LENGTH = 50
 
 const timeFormatter = new Intl.DateTimeFormat('en-US', {
   hour: 'numeric',
@@ -23,28 +27,65 @@ function formatTimestampUtc(timestampUtc) {
 function App() {
   const [status, setStatus] = useState('loading')
   const [data, setData] = useState({ message: '', timestampUtc: '' })
+  const [name, setName] = useState('')
+  const latestRequestRef = useRef(0)
 
-  useEffect(() => {
-    let cancelled = false
+  // Both the initial load and every submit funnel through here, so there is a
+  // single status machine. Starting a new request invalidates any older one's
+  // state writes, so the newest request wins even if an earlier response lands
+  // last. The returned function cancels this request (used as effect cleanup).
+  const load = useCallback((requestedName) => {
+    const requestId = latestRequestRef.current + 1
+    latestRequestRef.current = requestId
 
-    fetchMessage()
+    const cancelled = () => latestRequestRef.current !== requestId
+
+    setStatus('loading')
+
+    fetchMessage(requestedName)
       .then((result) => {
-        if (cancelled) return
+        if (cancelled()) return
         setData({ message: result.message, timestampUtc: result.timestampUtc })
         setStatus('success')
       })
       .catch(() => {
-        if (cancelled) return
+        if (cancelled()) return
         setStatus('error')
       })
 
     return () => {
-      cancelled = true
+      if (!cancelled()) latestRequestRef.current = requestId + 1
     }
   }, [])
 
+  useEffect(() => load(), [load])
+
+  const handleSubmit = (event) => {
+    event.preventDefault()
+    load(name)
+  }
+
   return (
     <main className="app">
+      <form className="name-form" onSubmit={handleSubmit}>
+        <label className="name-label" htmlFor="name">
+          Your name
+        </label>
+        <input
+          className="name-input"
+          id="name"
+          name="name"
+          type="text"
+          value={name}
+          maxLength={MAX_NAME_LENGTH}
+          autoComplete="off"
+          onChange={(event) => setName(event.target.value)}
+        />
+        <button className="name-submit" type="submit">
+          Say hello
+        </button>
+      </form>
+
       {status === 'loading' && <p>Loading message...</p>}
       {status === 'success' && (
         <p className="message">

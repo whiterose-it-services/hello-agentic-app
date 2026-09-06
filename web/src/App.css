@@ -3,6 +3,45 @@
   text-align: center;
 }
 
+.name-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.name-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111111;
+}
+
+.name-input {
+  font-size: 16px;
+  padding: 8px 10px;
+  border: 1px solid #767676;
+  border-radius: 4px;
+  color: #111111;
+  background-color: #ffffff;
+}
+
+.name-submit {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border: 1px solid #1a4d8f;
+  border-radius: 4px;
+  color: #ffffff;
+  background-color: #1a4d8f;
+  cursor: pointer;
+}
+
+.name-submit:hover {
+  background-color: #16406f;
+}
+
 .message {
   font-size: 32px;
   font-weight: 600;
